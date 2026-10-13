@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคนขับรถบางแสน</title>
+    <style>
+        body { 
+            margin: 0; font-family: 'Tahoma', sans-serif; 
+            background: #f5f5f5; 
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; 
+        }
+        .app-container { 
+            width: 90%; max-width: 500px; 
+            background: white; border-radius: 16px; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1); overflow: hidden; 
+        }
+        .header { 
+            background: #e65100; color: white; padding: 25px; 
+            text-align: center; font-size: 22px; font-weight: bold; 
+        }
+        .content { padding: 40px 30px; text-align: center; }
+        
+        .input-group { margin-bottom: 25px; }
+        .input-group label { 
+            display: block; font-size: 16px; color: #555; 
+            margin-bottom: 8px; font-weight: bold; 
+        }
+        .input-group input { 
+            width: 100%; box-sizing: border-box; 
+            padding: 15px; border: 1px solid #ccc; 
+            border-radius: 8px; font-size: 18px; text-align: center; 
+        }
+        
+        button { 
+            width: 100%; padding: 18px; 
+            background: #e65100; color: white; border: none; 
+            border-radius: 8px; font-size: 18px; font-weight: bold; 
+            cursor: pointer; transition: 0.2s; margin-top: 10px;
+        }
+        button:hover { background: #bf360c; }
+        
+        #dashboard-screen { display: none; }
+        .profile-pic { font-size: 70px; margin: 0 auto 15px auto; }
+        .status-box { padding: 20px; border-radius: 8px; font-size: 20px; font-weight: bold; margin: 30px 0; border: 2px solid; }
+        .status-online { color: #2e7d32; border-color: #4caf50; background: transparent; } 
+        .status-offline { color: #c62828; border-color: #f44336; background: transparent; } 
+        .info-text { font-size: 16px; color: #333; margin: 10px 0; }
+        
+        .success-msg {
+            color: #2e7d32; font-size: 20px; font-weight: bold; 
+            background: #e8f5e9; padding: 10px; border-radius: 8px; margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">🚐 ระบบคนขับรถบางแสน</div>
+        
+        <!-- หน้า 1: ลงทะเบียน -->
+        <div id="login-screen" class="content">
+            <h3 style="color: #333; margin-top: 0; margin-bottom: 30px;">สร้างโปรไฟล์รับงาน</h3>
+            <div class="input-group">
+                <label>ชื่อ-นามสกุล</label>
+                <input type="text" id="reg-name" placeholder="เช่น ลุงสมชาย ใจสู้">
+            </div>
+            <div class="input-group">
+                <label>ป้ายทะเบียนรถ</label>
+                <input type="text" id="reg-plate" placeholder="เช่น 10-9999 ชลบุรี">
+            </div>
+            <div class="input-group">
+                <label>เบอร์โทรศัพท์</label>
+                <input type="text" id="reg-phone" placeholder="เช่น 0812345678">
+            </div>
+            <div class="input-group">
+                <label>LINE ID</label>
+                <input type="text" id="reg-line" placeholder="เช่น somchai_driver">
+            </div>
+            <button onclick="login()">ลงทะเบียน</button>
+        </div>
+
+        <!-- หน้า 2: แดชบอร์ดเปิดปิดสถานะ -->
+        <div id="dashboard-screen" class="content">
+            <div class="success-msg">✅ ลงทะเบียนสมบูรณ์</div>
+            
+            <div class="profile-pic">👨🏽</div>
+            <h2 id="dash-name" style="margin: 5px 0 20px 0; color: #333;">ชื่อคนขับ</h2>
+            <p class="info-text">🚗 ทะเบียน: <strong id="dash-plate"></strong></p>
+            <p class="info-text">📞 เบอร์โทร: <strong id="dash-phone" style="color:#1976d2;"></strong></p>
+            <p class="info-text">💬 LINE ID: <strong id="dash-line" style="color:#00b900;"></strong></p>
+
+            <div id="status-display" class="status-box status-offline">
+                🔴 ปิดรับงานอยู่
+            </div>
+
+            <button id="toggle-btn" style="background: #4caf50;" onclick="toggleStatus()">🟢 เปิดรับผู้โดยสาร</button>
+        </div>
+    </div>
+
+    <script>
+        // 🔴 นำลิงก์ Web App ที่ขึ้นต้นด้วย https://script.google.com/... มาใส่ที่นี่ (ดูวิธีทำด้านล่าง)
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-s07ypF94O9iMJVPHFxFZ7F7ADnoHnn5DxmKwalfYK3VrD13eyPOFiijldJESr5TTg/exec'; 
+        
+        let isOnline = false;
+        let driverData = {};
+
+        function login() {
+            driverData = {
+                name: document.getElementById('reg-name').value,
+                plate: document.getElementById('reg-plate').value,
+                phone: document.getElementById('reg-phone').value,
+                line: document.getElementById('reg-line').value,
+                status: '🔴 ปิดรับงานอยู่'
+            };
+
+            if(!driverData.name || !driverData.plate || !driverData.phone || !driverData.line) {
+                alert("กรุณากรอกข้อมูลให้ครบถ้วน"); return;
+            }
+
+            // ซ่อนหน้าลงทะเบียน และแสดงหน้าแดชบอร์ด
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard-screen').style.display = 'block';
+
+            // นำข้อมูลไปแสดงผล
+            document.getElementById('dash-name').innerText = driverData.name;
+            document.getElementById('dash-plate').innerText = driverData.plate;
+            document.getElementById('dash-phone').innerText = driverData.phone;
+            document.getElementById('dash-line').innerText = driverData.line;
+
+            // ส่งข้อมูลไปบันทึกลง Google Sheet
+            saveToExcel(driverData);
+        }
+
+        function toggleStatus() {
+            isOnline = !isOnline;
+            const statusBox = document.getElementById('status-display');
+            const toggleBtn = document.getElementById('toggle-btn');
+
+            if(isOnline) {
+                statusBox.innerHTML = '🟢 เปิดรับงาน (พร้อมให้บริการ)';
+                statusBox.className = 'status-box status-online';
+                toggleBtn.innerHTML = '🔴 ปิดรับผู้โดยสาร';
+                toggleBtn.style.background = '#f44336';
+                driverData.status = '🟢 เปิดรับงาน';
+            } else {
+                statusBox.innerHTML = '🔴 ปิดรับงานอยู่';
+                statusBox.className = 'status-box status-offline';
+                toggleBtn.innerHTML = '🟢 เปิดรับผู้โดยสาร';
+                toggleBtn.style.background = '#4caf50';
+                driverData.status = '🔴 ปิดรับงานอยู่';
+            }
+            
+            // อัปเดตสถานะไปยัง Google Sheet
+            saveToExcel(driverData);
+        }
+
+        function saveToExcel(data) {
+            // ป้องกัน Error หากยังไม่ได้ใส่ scriptURL
+            if (scriptURL === 'https://script.google.com/macros/s/AKfycbxw-s07ypF94O9iMJVPHFxFZ7F7ADnoHnn5DxmKwalfYK3VrD13eyPOFiijldJESr5TTg/exec' || scriptURL === '') {
+                console.log("ยังไม่ได้ใส่ scriptURL ระบบจะยังไม่ส่งข้อมูลไป Google Sheet");
+                return;
+            }
+
+            const url = scriptURL + "?name=" + encodeURIComponent(data.name) + 
+                        "&plate=" + encodeURIComponent(data.plate) + 
+                        "&phone=" + encodeURIComponent(data.phone) + 
+                        "&line=" + encodeURIComponent(data.line) + 
+                        "&status=" + encodeURIComponent(data.status);
+
+            fetch(url, { method: 'GET', mode: 'no-cors' })
+                .then(response => console.log('ส่งข้อมูลสำเร็จ'))
+                .catch(error => console.error('เกิดข้อผิดพลาด:', error));
+        }
+    </script>
+</body>
+</html>

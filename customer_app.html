@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หารถสองแถวบางแสน</title>
+    <style>
+        body { 
+            margin: 0; font-family: 'Tahoma', sans-serif; 
+            background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+            transition: background-image 0.5s ease-in-out;
+        }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1; }
+        .app-container { 
+            position: relative; z-index: 2; width: 90%; max-width: 350px; 
+            background: rgba(255, 255, 255, 0.95); border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; backdrop-filter: blur(5px);
+        }
+        .header { background: #d32f2f; color: white; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; }
+        .content { padding: 25px; text-align: center; }
+        .location-tag { display: inline-block; background: #333; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; margin-bottom: 20px; }
+        button.btn-search { width: 100%; padding: 14px; background: #d32f2f; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button.btn-search:hover { background: #b71c1c; }
+        button:disabled { background: #ccc !important; cursor: wait; }
+
+        #driver-info { display: none; text-align: left; margin-top: 10px; }
+        .driver-profile { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 15px; }
+        .avatar { font-size: 40px; background: #f0f0f0; border-radius: 50%; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; }
+        .driver-details p { margin: 3px 0; font-size: 14px; color: #333; }
+        
+        .contact-box { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: center; }
+        .contact-text { font-weight: bold; font-size: 16px; margin: 5px 0; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-call { background: #1976d2; color: white; padding: 12px; flex: 1; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; display: block;}
+        .btn-line { background: #00b900; color: white; padding: 12px; flex: 1; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; display: block;}
+        .btn-cancel { background: #757575; color: white; padding: 10px; width: 100%; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="app-container">
+        <div class="header">🛻 หารถสองแถวบางแสน</div>
+        <div class="content">
+            
+            <div id="search-section">
+                <div class="location-tag">📍 <span id="current-location">หาดบางแสน</span></div>
+                <p style="color: #555; font-size: 14px; margin-bottom: 20px;">ค้นหารถที่กำลังออนไลน์ในระบบ</p>
+                <button class="btn-search" id="btn-search" onclick="searchCar()">🔍 ค้นหารถที่ว่างอยู่</button>
+            </div>
+
+            <div id="driver-info">
+                <div class="location-tag" style="background: #d32f2f;">เจอรถอยู่ใกล้ๆ: <span id="found-location"></span></div>
+                <div class="driver-profile">
+                    <div class="avatar" id="d-photo">👨🏽</div>
+                    <div class="driver-details">
+                        <p><strong id="d-name">ชื่อคนขับ</strong></p>
+                        <p>ทะเบียน: <strong id="d-plate">---</strong></p>
+                        <p>⭐ 4.9 | รถสองแถวแดง</p>
+                    </div>
+                </div>
+                <div class="contact-box">
+                    <p style="margin:0 0 10px 0; font-size:13px; color:#666;">ติดต่อคนขับโดยตรง</p>
+                    <div class="contact-text" style="color: #1976d2;">📞 <span id="d-phone">---</span></div>
+                    <div class="contact-text" style="color: #00b900;">💬 LINE: <span id="d-line">---</span></div>
+                    
+                    <div class="btn-group">
+                        <a href="#" id="link-call" class="btn-call">📞 โทรออก</a>
+                        <a href="#" id="link-line" class="btn-line" target="_blank">💬 ทัก LINE</a>
+                    </div>
+                </div>
+                <button class="btn-cancel" onclick="resetSearch()">❌ ยกเลิก / หารถคันอื่น</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 🔴🔴🔴 นำลิงก์ Web App เดียวกันมาใส่ที่นี่ 🔴🔴🔴
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxw-s07ypF94O9iMJVPHFxFZ7F7ADnoHnn5DxmKwalfYK3VrD13eyPOFiijldJESr5TTg/exec';
+
+        const locations = [
+            { name: "หน้า ม.บูรพา", bg: "url('https://images.unsplash.com/photo-1543837173-6c26bc89937b?auto=format&fit=crop&w=1920&q=80')" },
+            { name: "วงเวียนบางแสน", bg: "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80')" },
+            { name: "จุดชมวิวเขาสามมุข", bg: "url('https://images.unsplash.com/photo-1506462945848-ac8ea6f609cc?auto=format&fit=crop&w=1920&q=80')" },
+            { name: "ตลาดหนองมน", bg: "url('https://images.unsplash.com/photo-1533626778401-2a6288339cba?auto=format&fit=crop&w=1920&q=80')" }
+        ];
+
+        function searchCar() {
+            const btn = document.getElementById('btn-search');
+            btn.innerText = "⏳ กำลังค้นหา...";
+            btn.disabled = true;
+
+            // ดึงข้อมูลจริงจาก Google Sheets
+            fetch(scriptURL)
+                .then(response => response.json())
+                .then(onlineDrivers => {
+                    btn.innerText = "🔍 ค้นหารถที่ว่างอยู่";
+                    btn.disabled = false;
+
+                    if (onlineDrivers.length === 0) {
+                        alert("❌ ขออภัย ตอนนี้ไม่มีรถให้บริการเลยครับ โปรดลองใหม่ภายหลัง");
+                        return;
+                    }
+
+                    // สุ่มสถานที่
+                    const randomLoc = locations[Math.floor(Math.random() * locations.length)];
+                    document.body.style.backgroundImage = randomLoc.bg;
+                    document.getElementById('found-location').innerText = randomLoc.name;
+
+                    // สุ่มคนขับที่ดึงมาได้
+                    const driver = onlineDrivers[Math.floor(Math.random() * onlineDrivers.length)];
+                    
+                    document.getElementById('search-section').style.display = 'none';
+                    document.getElementById('driver-info').style.display = 'block';
+                    
+                    document.getElementById('d-name').innerText = driver.name;
+                    document.getElementById('d-plate').innerText = driver.plate;
+                    document.getElementById('d-phone').innerText = driver.phone;
+                    document.getElementById('d-line').innerText = driver.line;
+                    
+                    // เซ็ตลิงก์ให้กดโทรออกและเปิดไลน์ได้จริง
+                    document.getElementById('link-call').href = "tel:" + driver.phone;
+                    document.getElementById('link-line').href = "https://line.me/ti/p/~" + driver.line;
+                })
+                .catch(error => {
+                    alert("เกิดข้อผิดพลาดในการเชื่อมต่อระบบ");
+                    btn.innerText = "🔍 ค้นหารถที่ว่างอยู่";
+                    btn.disabled = false;
+                });
+        }
+
+        function resetSearch() {
+            document.getElementById('driver-info').style.display = 'none';
+            document.getElementById('search-section').style.display = 'block';
+            
+            const randomLoc = locations[Math.floor(Math.random() * locations.length)];
+            document.body.style.backgroundImage = randomLoc.bg;
+            document.getElementById('current-location').innerText = randomLoc.name;
+        }
+    </script>
+</body>
+</html>
